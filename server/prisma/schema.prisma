@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  uid                String   @unique @default(uuid())
+  email              String   @unique
+  password           String
+  fullName           String
+  role               String   // student, faculty, alumni, admin, guest
+  department         String?
+  departmentCode     String?
+  semester           Int?
+  rollNumber         String?
+  passingYear        Int?
+  designation        String?
+  profilePhoto       String?
+  skills             String   @default("[]")
+  certifications     String   @default("[]")
+  projects           String   @default("[]")
+  profileVisibility  String   @default("public") // public, campus-only
+  isVerified         Boolean  @default(false)
+  isApproved         String   @default("pending") // pending, approved, rejected
+  isActive           Boolean  @default(true)
+  isLocked           Boolean  @default(false)
+  isFlagged          Boolean  @default(false)
+  isCampusMember     Boolean  @default(true)
+  isGuest            Boolean  @default(false)
+  verifiedBadge      Boolean  @default(false)
+  mustResetPassword  Boolean  @default(false)
+  profileSetupComplete Boolean @default(false)
+  failedLoginAttempts Int     @default(0)
+  lockedAt           String?
+  lastLoginAt        String?
+  verificationToken  String?
+  resetToken         String?
+  resetTokenExpiry   String?
+  createdAt          String
+  updatedAt          String
+
+  posts              Post[]
+  notices            Notice[]
+  comments           Comment[]
+  likes              Like[]
+  notifications      Notification[]
+  followers          Follow[] @relation("UserFollowers")
+  following          Follow[] @relation("UserFollowing")
+
+  @@map("users")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  createdAt   String
+  updatedAt   String
+
+  @@map("departments")
+}
+
+model Post {
+  id              String   @id @default(uuid())
+  authorId        String
+  authorName      String
+  authorRole      String
+  content         String
+  imageUrl        String?
+  videoUrl        String?
+  mediaUrls       String   @default("[]")
+  externalLink    String?
+  department      String?
+  semester        Int?
+  visibility      String   @default("public")
+  isAnnouncement  Boolean  @default(false)
+  isRepost        Boolean  @default(false)
+  originalPostId  String?
+  likesCount      Int      @default(0)
+  commentsCount   Int      @default(0)
+  sharesCount     Int      @default(0)
+  createdAt       String
+  updatedAt       String
+
+  author          User     @relation(fields: [authorId], references: [uid])
+  comments        Comment[]
+  likes           Like[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  authorId    String
+  authorName  String
+  content     String
+  createdAt   String
+  updatedAt   String
+
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [uid])
+
+  @@map("comments")
+}
+
+model Like {
+  id          String   @id @default(uuid())
+  postId      String
+  userId      String
+  createdAt   String
+
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [uid])
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Notice {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  category        String   // event, exam, placement, general
+  targetAudience  String   @default("all") // all, department, semester
+  targetSemester  Int?
+  department      String?
+  createdBy       String
+  createdByName   String
+  expiryDate      String?
+  createdAt       String
+  updatedAt       String
+
+  author          User     @relation(fields: [createdBy], references: [uid])
+
+  @@map("notices")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // like, comment, follow, notice, mention
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   String
+
+  user        User     @relation(fields: [userId], references: [uid], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   String
+
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [uid])
+  following   User     @relation("UserFollowing", fields: [followingId], references: [uid])
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+# SQLite database - uncomment to commit database to GitHub
+prisma/dev.db
+*.db
